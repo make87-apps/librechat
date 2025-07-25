@@ -1,47 +1,51 @@
 version: 1
 interfaces:
-  - name: zenoh
-    protocol: zenoh
-    default_port:
-      name: zenoh
-      protocol: TCP
-      target_port: 7447
-    publishers:
-      - name: outgoing_message
+  - name: librechat
+    protocol: http
+    servers:
+      - name: backend
         spec:
-          make87_message: make87_messages.text.text_plain.PlainText
-        encoding: proto
-        config:
-          type: object
-          properties:
-            congestion_control:
-              type: string
-              enum: [ DROP, BLOCK ]
-              default: DROP
-            priority:
-              type: string
-              enum:
-                - REAL_TIME
-                - INTERACTIVE_HIGH
-                - INTERACTIVE_LOW
-                - DATA_HIGH
-                - DATA
-                - DATA_LOW
-                - BACKGROUND
-              default: DATA
-            express:
-              type: boolean
-              default: true
-            reliability:
-              type: string
-              enum: [ BEST_EFFORT, RELIABLE ]
-              default: RELIABLE
+          string: librechat/api/v1
+        port:
+          name: backend
+          protocol: TCP
+          target_port: 8000
+      - name: frontend
+        spec:
+          string: librechat/api
+        port:
+          name: frontend
+          protocol: TCP
+          target_port: 3080
+          is_system_interface: true
+  - name: mcp_servers
+    protocol: mcp
+    clients:
+      - name: mcp_1
+        spec:
+          string: mcp/http
+      - name: mcp_2
+        spec:
+          string: mcp/http
+      - name: mcp_3
+        spec:
+          string: mcp/http
+config:
+    type: object
+    properties:
+      postgres_password:
+        type: string
+        description: Password for the PostgreSQL database.
+      admin_name:
+        type: string
+        description: Name of the admin user.
+        default: admin
+      admin_password:
+        type: string
+        description: Password for the admin user.
+        default: admin
 container_config:
-  environment:
-    RUST_LOG: info
+  volumes: ["librechat-data:/data"]
 build:
-  build_kit:
-    name: python3
-dev_build:
-  build_kit:
-    name: python3
+  custom:
+    dockerfile: docker/Dockerfile
