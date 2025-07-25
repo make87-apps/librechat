@@ -51,7 +51,7 @@ EOF
 
 if [ -n "$MAKE87_CONFIG" ]; then
   echo "→ Populating MCP servers and Ollama config from MAKE87_CONFIG"
-  clients=$(printf '%s' "$MAKE87_CONFIG" | jq -c '.interfaces["mcp servers"].clients[]')
+  clients=$(printf '%s' "$MAKE87_CONFIG" | jq -c '.interfaces["mcp_servers"].clients[]')
   echo "mcpServers:" >> /app/librechat.yaml
   for client in $clients; do
     name=$(printf '%s' "$client" | jq -r '.name')

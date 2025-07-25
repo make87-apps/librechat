@@ -30,6 +30,12 @@ interfaces:
       - name: mcp_3
         spec:
           string: mcp/http
+  - name: ollama
+    protocol: http
+    clients:
+      - name: ollama
+        spec:
+          string: ollama
 config:
     type: object
     properties:
