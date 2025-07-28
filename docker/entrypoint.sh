@@ -52,12 +52,12 @@ EOF
 if [ -n "$MAKE87_CONFIG" ]; then
   echo "→ Populating MCP servers and Ollama config from MAKE87_CONFIG"
   clients=$(printf '%s' "$MAKE87_CONFIG" | jq -c '.interfaces["mcp_servers"].clients[]')
-  echo "mcpServers:" >> /app/librechat.yaml
+  echo "mcpServers:" >> /opt/librechat/librechat.yaml
   for client in $clients; do
     name=$(printf '%s' "$client" | jq -r '.name')
     ip=$(printf '%s' "$client" | jq -r '.vpn_ip')
     port=$(printf '%s' "$client" | jq -r '.vpn_port')
-    cat <<EOL >> /app/librechat.yaml
+    cat <<EOL >> /opt/librechat/librechat.yaml
   $name:
     url: "http://$ip:$port/sse"
 EOL
@@ -67,7 +67,7 @@ EOL
   if [ -n "$ollama_client" ]; then
     ollama_ip=$(printf '%s' "$ollama_client" | jq -r '.vpn_ip')
     ollama_port=$(printf '%s' "$ollama_client" | jq -r '.vpn_port')
-    cat <<EOL >> /app/librechat.yaml
+    cat <<EOL >> /opt/librechat/librechat.yaml
 
 ollama:
   baseURL: "http://$ollama_ip:$ollama_port"
