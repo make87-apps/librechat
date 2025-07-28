@@ -37,7 +37,7 @@ export POSTGRES_PASSWORD
 
 if [ ! -f /data/pgdata/PG_VERSION ]; then
   echo "Initializing PostgreSQL data directory…"
-  su postgres -c "initdb -D /data/pgdata"
+  su postgres -c "/usr/lib/postgresql/13/bin/initdb -D /data/pgdata"
 fi
 
 # ──────────────────────────────────────────────────────────────
