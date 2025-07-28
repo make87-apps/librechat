@@ -15,7 +15,7 @@ interfaces:
           string: librechat/api
         port:
           name: frontend
-          protocol: TCP
+          protocol: HTTP
           target_port: 3080
           is_system_interface: true
   - name: mcp_servers
