@@ -27,7 +27,6 @@ export MONGODB_URL
 # ──────────────────────────────────────────────────────────────
 # 3) Initialize Postgres if necessary
 # ──────────────────────────────────────────────────────────────
-# Load Postgres password from MAKE87_CONFIG or fallback
 DEFAULT_PG_PW="changeme"
 if [ -n "$MAKE87_CONFIG" ]; then
   POSTGRES_PASSWORD=$(printf '%s' "$MAKE87_CONFIG" | jq -r '.config.postgres_password // empty')
@@ -41,24 +40,26 @@ if [ ! -f /data/pgdata/PG_VERSION ]; then
 fi
 
 # ──────────────────────────────────────────────────────────────
-# 4) Generate /opt/librechat/librechat.yaml from $MAKE87_CONFIG or write default
+# 4) Generate /opt/librechat/librechat.yaml
 # ──────────────────────────────────────────────────────────────
 echo "⟳ Generating /opt/librechat/librechat.yaml…"
 cat <<EOF > /opt/librechat/librechat.yaml
 version: 1.2.8
-
 EOF
 
 if [ -n "$MAKE87_CONFIG" ]; then
   echo "→ Populating MCP servers and Ollama config from MAKE87_CONFIG"
-  clients=$(printf '%s' "$MAKE87_CONFIG" | jq -c '.interfaces["mcp_servers"].clients[]')
+
+  echo "" >> /opt/librechat/librechat.yaml
   echo "mcpServers:" >> /opt/librechat/librechat.yaml
+  clients=$(printf '%s' "$MAKE87_CONFIG" | jq -c '.interfaces["mcp_servers"].clients[]')
   for client in $clients; do
     name=$(printf '%s' "$client" | jq -r '.name')
     ip=$(printf '%s' "$client" | jq -r '.vpn_ip')
     port=$(printf '%s' "$client" | jq -r '.vpn_port')
     cat <<EOL >> /opt/librechat/librechat.yaml
   $name:
+    type: streamable-http
     url: "http://$ip:$port/sse"
 EOL
   done
@@ -69,17 +70,22 @@ EOL
     ollama_port=$(printf '%s' "$ollama_client" | jq -r '.vpn_port')
     cat <<EOL >> /opt/librechat/librechat.yaml
 
-ollama:
-  baseURL: "http://$ollama_ip:$ollama_port"
-  models:
-    - model: llama3
+endpoints:
+  custom:
+    - name: "Ollama"
+      apiKey: "ollama"
+      baseURL: "http://$ollama_ip:$ollama_port/v1/chat/completions"
+      models:
+        default:
+          - "llama3"
+      modelDisplayLabel: "Ollama"
 EOL
   fi
 else
   echo "→ MAKE87_CONFIG not set; writing default minimal config"
 fi
 
-echo "✔ /app/librechat.yaml:"
+echo "✔ /opt/librechat/librechat.yaml:"
 sed 's/^/   /' /opt/librechat/librechat.yaml
 
 # ──────────────────────────────────────────────────────────────
@@ -87,20 +93,17 @@ sed 's/^/   /' /opt/librechat/librechat.yaml
 # ──────────────────────────────────────────────────────────────
 ENV_FILE="/opt/librechat/.env"
 
-# 1. Copy example env if it doesn't exist
 if [ ! -f "$ENV_FILE" ]; then
-    cp /opt/librechat/.env.example "$ENV_FILE"
+  cp /opt/librechat/.env.example "$ENV_FILE"
 fi
 
-# 2. Function to set default env vars if missing
 set_env_if_missing() {
-    KEY=$1
-    VALUE=$2
-    FILE=$3
-    grep -q "^$KEY=" "$FILE" || echo "$KEY=$VALUE" >> "$FILE"
+  KEY=$1
+  VALUE=$2
+  FILE=$3
+  grep -q "^$KEY=" "$FILE" || echo "$KEY=$VALUE" >> "$FILE"
 }
 
-# 3. Patch critical values from container env (adjust to your config system)
 set_env_if_missing "JWT_SECRET" "${JWT_SECRET:-$(openssl rand -hex 32)}" "$ENV_FILE"
 set_env_if_missing "JWT_REFRESH_SECRET" "${JWT_REFRESH_SECRET:-$(openssl rand -hex 32)}" "$ENV_FILE"
 set_env_if_missing "MONGO_URI" "${MONGO_URI:-mongodb://127.0.0.1:27017/LibreChat}" "$ENV_FILE"
@@ -109,7 +112,4 @@ set_env_if_missing "POSTGRES_PASSWORD" "${POSTGRES_PASSWORD:-librechat}" "$ENV_F
 set_env_if_missing "ALLOW_REGISTRATION" "true" "$ENV_FILE"
 set_env_if_missing "ALLOW_UNVERIFIED_EMAIL_LOGIN" "true" "$ENV_FILE"
 
-
-# Now launch supervisord
 exec supervisord -n -c /etc/supervisor/conf.d/librechat.conf
-
