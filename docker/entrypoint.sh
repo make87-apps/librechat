@@ -76,8 +76,11 @@ endpoints:
       apiKey: "ollama"
       baseURL: "http://$ollama_ip:$ollama_port/v1/chat/completions"
       models:
-        default:
-          - "llama3"
+        default: []
+        fetch: true
+      titleConvo: true
+      titleModel: "current_model"
+      summarize: false
       modelDisplayLabel: "Ollama"
 EOL
   fi
