@@ -60,7 +60,7 @@ if [ -n "$MAKE87_CONFIG" ]; then
     cat <<EOL >> /opt/librechat/librechat.yaml
   $name:
     type: streamable-http
-    url: "http://$ip:$port/sse"
+    url: "http://$ip:$port/mcp"
 EOL
   done
 
@@ -76,7 +76,8 @@ endpoints:
       apiKey: "ollama"
       baseURL: "http://$ollama_ip:$ollama_port/v1/chat/completions"
       models:
-        default: []
+        default:
+          - mistral-small3.2
         fetch: true
       titleConvo: true
       titleModel: "current_model"
