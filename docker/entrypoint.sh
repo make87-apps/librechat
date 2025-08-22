@@ -74,7 +74,7 @@ endpoints:
   custom:
     - name: "Ollama"
       apiKey: "ollama"
-      baseURL: "http://$ollama_ip:$ollama_port/v1/chat/completions"
+      baseURL: "http://$ollama_ip:$ollama_port/v1/"
       models:
         default:
           - mistral-small3.2
